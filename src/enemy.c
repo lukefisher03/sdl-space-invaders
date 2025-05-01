@@ -80,7 +80,7 @@ Uint32 fire_enemy_weapon(void *as, SDL_TimerID id, Uint32 interval) {
             &chosen_cluster->enemies[SDL_rand(chosen_cluster->size)];
 
         if (chosen_enemy->health > 0) { // Dirty fix to stop dead enemies from firing weapons
-            struct Bullet *b = create_bullet(&chosen_enemy->rect);
+            struct Bullet *b = create_bullet(&chosen_enemy->rect, 180);
             state->enemy_bullets[++l->enemy_bullets_fired - 1] = b;
         }
     }

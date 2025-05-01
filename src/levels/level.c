@@ -33,7 +33,7 @@ void render_level(struct AppState *as, SDL_Renderer *renderer) {
         struct Bullet *b = as->enemy_bullets[i];
         b->rect.y += BULLET_SPEED;
         SDL_SetRenderDrawColor(renderer, 215, 100, 100, SDL_ALPHA_OPAQUE);
-        SDL_RenderRect(renderer, &(b->rect));
+        SDL_RenderTexture(renderer, as->bullet_texture, NULL, &b->rect);
 
         if (SDL_HasRectIntersectionFloat(&b->rect, &as->player.rect)) {
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);

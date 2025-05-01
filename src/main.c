@@ -43,6 +43,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     initialize_player(player, as, renderer);
     initialize_stars(stars, STAR_COUNT);
+    as->bullet_texture = load_bmp_texture("assets/bullet.bmp", renderer);
+    if (!as->bullet_texture) {
+        SDL_Log("Failed to create bullet texture\n");
+    }
+
     as->active_level = build_level_1(as, renderer);
     *appstate = as;
 
@@ -98,18 +103,18 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     render_level(as, renderer);
 
     unsigned int num_collisions =
-        update_bullets(&as->player, as->bullets, q_tree, renderer);
+        update_bullets(&as->player, as->bullets, q_tree, renderer, as->bullet_texture);
     as->active_level->live_enemy_count -= num_collisions;
 
     render_stars(stars, renderer, player);
 
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderTexture(renderer, player->texture, NULL, &player->rect);
+    SDL_RenderTextureRotated(renderer, player->texture, NULL, &player->rect, player->rotation, NULL, SDL_FLIP_NONE);
     SDL_RenderDebugText(renderer, 20, 20, "GALAGA!");
     if (as->active_level->live_enemy_count <= 0) {
         SDL_RenderDebugText(renderer, 200, 20, "YOU WIN!");
     }
-
+ 
     if (as->player.lives > 0) {
         for (size_t i = 0; i < as->player.lives; i++) {
             SDL_FRect r = {.h = SHIP_SIZE,
