@@ -13,6 +13,7 @@ void initialize_player(struct Player *p, struct AppState *as,
     p->rect.h = SHIP_SIZE;
     p->velocity = 0;
     p->rotation = 360;
+    p->cq = CQ_initialize(PARTICLE_TRAIL_COUNT);
     p->bullets_fired = 0;
     p->lives = PLAYER_DEFAULT_LIVES;
 
@@ -21,7 +22,7 @@ void initialize_player(struct Player *p, struct AppState *as,
         SDL_Log("Failed to create ship texture\n");
     }
 
-    SDL_AddTimer(300, &fire_player_weapon, as);
+    SDL_AddTimer(200, &fire_player_weapon, as);
 }
 
 void handle_input(SDL_Event *e, struct Player *p) {
@@ -70,6 +71,38 @@ void handle_input(SDL_Event *e, struct Player *p) {
     }
 }
 
+void render_particle_trail(struct Player *p, SDL_Renderer *renderer) {
+    // printf("Trail count: %d\n", p->trail_count);
+    double angle_radians = p->rotation * (M_PI / 180);
+    if ((p->velocity > 0.5 && !CQ_full(p->cq))) {
+        SDL_FRect *new_rect = malloc(sizeof(SDL_FRect));
+        new_rect->h = rand() % (int)(SHIP_SIZE * 0.3);
+        new_rect->w = rand() % (int)(SHIP_SIZE * 0.3);
+        // First set the particle in the center of the ship on the x axis
+        new_rect->x = p->rect.x + ((SHIP_SIZE / 2) - new_rect->w / 2);
+        // Now use sin() to calculate the appropriate offset to put the particle
+        // behind the ship on the x axis.
+        new_rect->x -=
+            sin(angle_radians) * SHIP_SIZE + (double)((rand() % 20) - 10);
+        // Put the ship in the center on the y axis.
+        new_rect->y = p->rect.y + (SHIP_SIZE / 2);
+        // Now use cos() to calculate the appropriate offset to put the particle
+        // behind the ship on the y axis.
+        new_rect->y += cos(angle_radians) * SHIP_SIZE - (new_rect->w / 2) +
+                       (rand() % 20) - 10;
+        CQ_enqueue(new_rect, p->cq);
+    } else {
+        SDL_FRect *particle = (SDL_FRect *)CQ_dequeue(p->cq);
+        free(particle);
+    }
+
+    for (size_t i = 0; i < p->cq->size; i++) {
+        if (p->cq->queue[i]) {
+            SDL_RenderRect(renderer, (SDL_FRect *)p->cq->queue[i]);
+        }
+    }
+}
+
 void update_player_movement(struct Player *p) {
     double radian_rotation = p->rotation * (M_PI / 180);
     p->rect.y -= cos(radian_rotation) * p->velocity;
@@ -80,7 +113,9 @@ void update_player_movement(struct Player *p) {
         }
     } else {
         if (p->velocity > 0) {
-            p->velocity -= 0.2;
+            p->velocity -= 0.1;
+        } else {
+            p->velocity = 0;
         }
     }
 
@@ -98,12 +133,12 @@ void update_player_movement(struct Player *p) {
     }
 }
 
-unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
+unsigned int update_bullets(struct Player *p, struct Bullet **bullets,
                             struct QTNode *q_tree, SDL_Renderer *renderer,
                             SDL_Texture *bullet_texture) {
     unsigned int death_count = 0;
 
-    for (size_t i = 0; i < player->bullets_fired; ++i) {
+    for (size_t i = 0; i < p->bullets_fired; ++i) {
         struct Bullet *b = bullets[i];
         double radian_rotation = b->rotation * (M_PI / 180);
         b->rect.y -= cos(radian_rotation) * 15;
@@ -124,7 +159,7 @@ unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
         // De-allocate the bullets as they leave the screen
         if (b->rect.y < 0 || b->rect.y > SCREEN_HEIGHT || b->rect.x < 0 ||
             b->rect.x > SCREEN_WIDTH || collided_enemy != NULL) {
-            destroy_bullet(i, bullets, --player->bullets_fired);
+            destroy_bullet(i, bullets, --p->bullets_fired);
         }
 
         SDL_SetRenderDrawColor(renderer, 3, 215, 255, SDL_ALPHA_OPAQUE);
@@ -144,7 +179,7 @@ Uint32 fire_player_weapon(void *as, SDL_TimerID id, Uint32 interval) {
     struct Player *p = &state->player;
     if (p->wasd & 16 && p->bullets_fired < PLAYER_NUM_BULLETS) {
         struct Bullet *b = create_bullet(&p->rect, p->rotation);
-        state->bullets[++p->bullets_fired - 1] = b;
+        state->bullets[p->bullets_fired++] = b;
     }
     return interval;
 }

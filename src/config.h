@@ -19,7 +19,7 @@
  * GAME
  */
 #define SHIP_SIZE 30
-#define BULLET_SPEED 14.0f
+#define BULLET_SPEED 15.0f
 
 /**
  * PLAYER
@@ -27,6 +27,7 @@
 #define PLAYER_SPEED 6.0f
 #define PLAYER_NUM_BULLETS 50
 #define PLAYER_DEFAULT_LIVES 3
+#define PARTICLE_TRAIL_COUNT 20
 // #define PLAYER_WRAP_AROUND
 
 /**
@@ -36,7 +37,7 @@
 #define ENEMY_MAX_CLUSTER_SIZE 50
 #define ENEMY_SPEED 2.0f
 #define ENEMY_MAX_HEALTH 100
-#define ENEMY_BULLET_BUFFER_SIZE 50
+#define ENEMY_BULLET_BUFFER_SIZE 0
 #define DEFAULT_ENEMY_BMP "assets/enemy.bmp"
 
 #endif

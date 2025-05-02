@@ -97,19 +97,20 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         return SDL_APP_CONTINUE;
     }
 
-    SDL_SetRenderDrawColor(renderer, 10, 15, 20, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 10, 20, 30, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
     render_level(as, renderer);
 
-    unsigned int num_collisions =
-        update_bullets(&as->player, as->bullets, q_tree, renderer, as->bullet_texture);
+    unsigned int num_collisions = update_bullets(
+        &as->player, as->bullets, q_tree, renderer, as->bullet_texture);
     as->active_level->live_enemy_count -= num_collisions;
 
     render_stars(stars, renderer, player);
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderTextureRotated(renderer, player->texture, NULL, &player->rect, player->rotation, NULL, SDL_FLIP_NONE);
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, SDL_ALPHA_OPAQUE);
+    SDL_RenderTextureRotated(renderer, player->texture, NULL, &player->rect,
+                             player->rotation, NULL, SDL_FLIP_NONE);
     SDL_RenderDebugText(renderer, 20, 20, "GALAGA!");
     if (as->active_level->live_enemy_count <= 0) {
         SDL_RenderDebugText(renderer, 200, 20, "YOU WIN!");
@@ -124,6 +125,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
                                 (SHIP_SIZE * i),
                            .y = 20};
 
+            render_particle_trail(&as->player, renderer);
             SDL_RenderTexture(renderer, player->texture, NULL, &r);
         }
     } else {
