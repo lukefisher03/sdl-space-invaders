@@ -14,6 +14,7 @@ void initialize_player(struct Player *p, struct AppState *as,
     p->velocity = 0;
     p->rotation = 360;
     p->cq = CQ_initialize(PARTICLE_TRAIL_COUNT);
+    p->bullets_fired = 0;
     p->lives = PLAYER_DEFAULT_LIVES;
 
     p->texture = load_bmp_texture("assets/ship.bmp", renderer);

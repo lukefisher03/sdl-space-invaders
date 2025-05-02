@@ -97,7 +97,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         return SDL_APP_CONTINUE;
     }
 
-    SDL_SetRenderDrawColor(renderer, 20, 25, 40, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 10, 20, 30, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
     render_level(as, renderer);
@@ -115,7 +115,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     if (as->active_level->live_enemy_count <= 0) {
         SDL_RenderDebugText(renderer, 200, 20, "YOU WIN!");
     }
-
+ 
     if (as->player.lives > 0) {
         for (size_t i = 0; i < as->player.lives; i++) {
             SDL_FRect r = {.h = SHIP_SIZE,
