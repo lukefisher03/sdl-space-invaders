@@ -72,7 +72,6 @@ void handle_input(SDL_Event *e, struct Player *p) {
 
 void update_player_movement(struct Player *p) {
     double radian_rotation = p->rotation * (M_PI / 180);
-    printf("Rotation: %d\n", p->rotation);
     p->rect.y -= cos(radian_rotation) * p->velocity;
     p->rect.x += sin(radian_rotation) * p->velocity;
     if (p->wasd & 1) {
@@ -100,8 +99,10 @@ void update_player_movement(struct Player *p) {
 }
 
 unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
-                            struct QTNode *q_tree, SDL_Renderer *renderer, SDL_Texture *bullet_texture) {
+                            struct QTNode *q_tree, SDL_Renderer *renderer,
+                            SDL_Texture *bullet_texture) {
     unsigned int death_count = 0;
+    printf("bullets fired %d\n", player->bullets_fired);
     for (size_t i = 0; i < player->bullets_fired; ++i) {
         struct Bullet *b = bullets[i];
         double radian_rotation = b->rotation * (M_PI / 180);
@@ -118,12 +119,15 @@ unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
             }
         }
 
-        if (b->rect.y < 0 || collided_enemy != NULL) {
+        if (b->rect.y < 0 || b->rect.y > SCREEN_HEIGHT || b->rect.x < 0 ||
+            b->rect.x > SCREEN_WIDTH || collided_enemy != NULL) {
             destroy_bullet(i, bullets, --player->bullets_fired);
+            printf("bullet destroyed!");
         }
 
         SDL_SetRenderDrawColor(renderer, 3, 215, 255, SDL_ALPHA_OPAQUE);
-        SDL_RenderTextureRotated(renderer, bullet_texture, NULL, &b->rect, b->rotation, NULL, SDL_FLIP_NONE);
+        SDL_RenderTextureRotated(renderer, bullet_texture, NULL, &b->rect,
+                                 b->rotation, NULL, SDL_FLIP_NONE);
     }
     return death_count;
 }
