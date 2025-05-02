@@ -14,7 +14,7 @@ void initialize_player(struct Player *p, struct AppState *as,
     p->velocity = 0;
     p->rotation = 360;
     p->bullets_fired = 0;
-    p->lives = 20;
+    p->lives = PLAYER_DEFAULT_LIVES;
 
     p->texture = load_bmp_texture("assets/ship.bmp", renderer);
     if (!p->texture) {
@@ -102,7 +102,7 @@ unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
                             struct QTNode *q_tree, SDL_Renderer *renderer,
                             SDL_Texture *bullet_texture) {
     unsigned int death_count = 0;
-    printf("bullets fired %d\n", player->bullets_fired);
+
     for (size_t i = 0; i < player->bullets_fired; ++i) {
         struct Bullet *b = bullets[i];
         double radian_rotation = b->rotation * (M_PI / 180);
@@ -110,6 +110,8 @@ unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
         b->rect.x += sin(radian_rotation) * 15;
 
         struct Enemy *collided_enemy = qt_query(q_tree, &b->rect);
+
+        // Draw hitboxes and decrement health
         if (collided_enemy != NULL) {
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
             SDL_RenderRect(renderer, &collided_enemy->rect);
@@ -119,10 +121,10 @@ unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
             }
         }
 
+        // De-allocate the bullets as they leave the screen
         if (b->rect.y < 0 || b->rect.y > SCREEN_HEIGHT || b->rect.x < 0 ||
             b->rect.x > SCREEN_WIDTH || collided_enemy != NULL) {
             destroy_bullet(i, bullets, --player->bullets_fired);
-            printf("bullet destroyed!");
         }
 
         SDL_SetRenderDrawColor(renderer, 3, 215, 255, SDL_ALPHA_OPAQUE);
