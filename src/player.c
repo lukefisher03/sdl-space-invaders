@@ -1,15 +1,18 @@
 #include "player.h"
+#include "app_state.h"
 #include "config.h"
 #include "enemy.h"
 #include "utils.h"
-#include "app_state.h"
+#include <math.h>
 
-void initialize_player(struct Player *p, struct AppState *as, SDL_Renderer *renderer) {
+void initialize_player(struct Player *p, struct AppState *as,
+                       SDL_Renderer *renderer) {
     p->rect.x = (SCREEN_WIDTH - SHIP_SIZE) / 2.0f;
     p->rect.y = (SCREEN_HEIGHT - SHIP_SIZE) * 0.85f;
     p->rect.w = SHIP_SIZE;
     p->rect.h = SHIP_SIZE;
-
+    p->velocity = 0;
+    p->rotation = 360;
     p->bullets_fired = 0;
     p->lives = PLAYER_DEFAULT_LIVES;
 
@@ -68,42 +71,47 @@ void handle_input(SDL_Event *e, struct Player *p) {
 }
 
 void update_player_movement(struct Player *p) {
-    if (p->wasd & 1 && p->rect.y > (SCREEN_HEIGHT / 1.5)) {
-        p->rect.y -= PLAYER_SPEED;
-    }
-    if (p->wasd & 4 && (p->rect.y + SHIP_SIZE) < SCREEN_HEIGHT) {
-        p->rect.y += PLAYER_SPEED;
+    double radian_rotation = p->rotation * (M_PI / 180);
+    p->rect.y -= cos(radian_rotation) * p->velocity;
+    p->rect.x += sin(radian_rotation) * p->velocity;
+    if (p->wasd & 1) {
+        if (p->velocity < PLAYER_SPEED) {
+            p->velocity += 0.1;
+        }
+    } else {
+        if (p->velocity > 0) {
+            p->velocity -= 0.2;
+        }
     }
 
-#ifdef PLAYER_WRAP_AROUND
     if (p->wasd & 2) {
-        p->rect.x -= PLAYER_SPEED;
+        p->rotation -= PLAYER_SPEED;
+        if (p->rotation <= 0) {
+            p->rotation = 360;
+        }
     }
     if (p->wasd & 8) {
-        p->rect.x += PLAYER_SPEED;
+        p->rotation += PLAYER_SPEED;
+        if (p->rotation >= 360) {
+            p->rotation = 0;
+        }
     }
-    wrap_coordinates(&p->rect);
-#else
-    if (p->wasd & 2 && p->rect.x > 0) {
-        p->rect.x -= PLAYER_SPEED;
-    }
-    if (p->wasd & 8 && p->rect.x + p->rect.w < SCREEN_WIDTH) {
-        p->rect.x += PLAYER_SPEED;
-    }
-#endif
 }
 
-unsigned int update_bullets(struct Player *player,
-                                           struct Bullet **bullets,
-                                           struct QTNode *q_tree,
-                                           SDL_Renderer *renderer) {
+unsigned int update_bullets(struct Player *player, struct Bullet **bullets,
+                            struct QTNode *q_tree, SDL_Renderer *renderer,
+                            SDL_Texture *bullet_texture) {
     unsigned int death_count = 0;
+
     for (size_t i = 0; i < player->bullets_fired; ++i) {
         struct Bullet *b = bullets[i];
-        b->rect.y -= BULLET_SPEED;
-        b->rect.x += i % 2 == 0 ? b->velocity : -b->velocity;
+        double radian_rotation = b->rotation * (M_PI / 180);
+        b->rect.y -= cos(radian_rotation) * 15;
+        b->rect.x += sin(radian_rotation) * 15;
 
         struct Enemy *collided_enemy = qt_query(q_tree, &b->rect);
+
+        // Draw hitboxes and decrement health
         if (collided_enemy != NULL) {
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
             SDL_RenderRect(renderer, &collided_enemy->rect);
@@ -113,12 +121,15 @@ unsigned int update_bullets(struct Player *player,
             }
         }
 
-        if (b->rect.y < 0 || collided_enemy != NULL) {
+        // De-allocate the bullets as they leave the screen
+        if (b->rect.y < 0 || b->rect.y > SCREEN_HEIGHT || b->rect.x < 0 ||
+            b->rect.x > SCREEN_WIDTH || collided_enemy != NULL) {
             destroy_bullet(i, bullets, --player->bullets_fired);
         }
 
         SDL_SetRenderDrawColor(renderer, 3, 215, 255, SDL_ALPHA_OPAQUE);
-        SDL_RenderRect(renderer, &(b->rect));
+        SDL_RenderTextureRotated(renderer, bullet_texture, NULL, &b->rect,
+                                 b->rotation, NULL, SDL_FLIP_NONE);
     }
     return death_count;
 }
@@ -132,7 +143,7 @@ Uint32 fire_player_weapon(void *as, SDL_TimerID id, Uint32 interval) {
 
     struct Player *p = &state->player;
     if (p->wasd & 16 && p->bullets_fired < PLAYER_NUM_BULLETS) {
-        struct Bullet *b = create_bullet(&p->rect);
+        struct Bullet *b = create_bullet(&p->rect, p->rotation);
         state->bullets[++p->bullets_fired - 1] = b;
     }
     return interval;
