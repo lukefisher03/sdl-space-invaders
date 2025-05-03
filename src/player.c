@@ -72,9 +72,14 @@ void handle_input(SDL_Event *e, struct Player *p) {
 }
 
 void render_particle_trail(struct Player *p, SDL_Renderer *renderer) {
-    // printf("Trail count: %d\n", p->trail_count);
     double angle_radians = p->rotation * (M_PI / 180);
+
     if ((p->velocity > 0.5 && !CQ_full(p->cq))) {
+        /**
+         * TODO: This should be converted to be a "pool" of particles that get
+         * reused instead of allocating and freeing new ones. The particles should also
+         * expire rather than get forced out of the queue once it fills up.
+         */
         SDL_FRect *new_rect = malloc(sizeof(SDL_FRect));
         new_rect->h = rand() % (int)(SHIP_SIZE * 0.3);
         new_rect->w = rand() % (int)(SHIP_SIZE * 0.3);
@@ -83,13 +88,13 @@ void render_particle_trail(struct Player *p, SDL_Renderer *renderer) {
         // Now use sin() to calculate the appropriate offset to put the particle
         // behind the ship on the x axis.
         new_rect->x -=
-            sin(angle_radians) * SHIP_SIZE + (double)((rand() % 20) - 10);
+            sin(angle_radians) * SHIP_SIZE + (double)((rand() % 10) - 5);
         // Put the ship in the center on the y axis.
         new_rect->y = p->rect.y + (SHIP_SIZE / 2);
         // Now use cos() to calculate the appropriate offset to put the particle
         // behind the ship on the y axis.
         new_rect->y += cos(angle_radians) * SHIP_SIZE - (new_rect->w / 2) +
-                       (rand() % 20) - 10;
+                       (rand() % 10) - 5;
         CQ_enqueue(new_rect, p->cq);
     } else {
         SDL_FRect *particle = (SDL_FRect *)CQ_dequeue(p->cq);

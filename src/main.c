@@ -108,14 +108,14 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     render_stars(stars, renderer, player);
 
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderTextureRotated(renderer, player->texture, NULL, &player->rect,
                              player->rotation, NULL, SDL_FLIP_NONE);
     SDL_RenderDebugText(renderer, 20, 20, "GALAGA!");
     if (as->active_level->live_enemy_count <= 0) {
         SDL_RenderDebugText(renderer, 200, 20, "YOU WIN!");
     }
- 
+    SDL_SetRenderDrawColor(renderer, 50, 50, 50, 30);
     if (as->player.lives > 0) {
         for (size_t i = 0; i < as->player.lives; i++) {
             SDL_FRect r = {.h = SHIP_SIZE,
